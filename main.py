@@ -3,6 +3,7 @@ from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from playwright.async_api import async_playwright
 from urllib.parse import urlparse
+from typing import Optional, Callable
 import re
 import asyncio
 
@@ -36,35 +37,62 @@ async def get_browser():
         _browser = await playwright.chromium.launch(headless=True, timeout=30000)
     return _browser
 
-@app.get("/screenshot")
-async def take_screenshot(url: str):
+async def take_screenshot_common(url: str, action: Optional[Callable] = None):
+    """公共截图函数，执行特定操作后截图"""
     try:
-        # 验证URL合法性
         if not validate_url(url):
             raise HTTPException(status_code=400, detail="Invalid URL format")
 
-        # 限制并发数
         async with _semaphore:
-            # 获取浏览器实例
             browser = await get_browser()
-            context = await browser.new_context(viewport={"width": 1280, "height": 800})
-            page = await context.new_page()
+            context = None
+            page = None
+            try:
+                context = await browser.new_context(viewport={"width": 1280, "height": 800})
+                page = await context.new_page()
+                await page.goto(url, wait_until="networkidle", timeout=15000)
+                
+                if action:
+                    await action(page)
 
-            # 访问页面（配置网络空闲检测）
-            await page.goto(url, wait_until="networkidle", timeout=15000)
-            
-            # 截取完整页面
-            screenshot = await page.screenshot(full_page=True, type="png")
-            
-            # 关闭页面和上下文
-            await page.close()
-            await context.close()
-
-            # 返回二进制图片数据
-            return Response(content=screenshot, media_type="image/png")
-
+                screenshot = await page.screenshot(full_page=True, type="png")
+                return Response(content=screenshot, media_type="image/png")
+            finally:
+                if page:
+                    await page.close()
+                if context:
+                    await context.close()
+    except HTTPException as he:
+        raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Screenshot failed: {str(e)}")
+
+@app.get("/screenshot")
+async def take_screenshot(url: str):
+    """基础截图API"""
+    return await take_screenshot_common(url)
+
+@app.get("/screenshot_after_click")
+async def take_screenshot_after_click(url: str, text: str):
+    """点击指定文本元素后截图"""
+    async def action(page):
+        element = page.get_by_text(text)
+        count = await element.count()
+        if count == 0:
+            raise HTTPException(status_code=404, detail="找不到包含指定文本的元素")
+        await element.click()
+        try:
+            await page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass  # 超时后继续截图
+    return await take_screenshot_common(url, action)
+
+@app.get("/screenshot_after_scroll")
+async def take_screenshot_after_scroll(url: str, delta_y: int):
+    """滚动页面后截图"""
+    async def action(page):
+        await page.evaluate(f"window.scrollBy(0, {delta_y})")
+    return await take_screenshot_common(url, action)
 
 # 关闭浏览器实例
 @app.on_event("shutdown")
