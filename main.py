@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse  # 修改为返回HTML
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
-from playwright.async_api import async_playwright
-from urllib.parse import urlparse, quote
+from DrissionPage import WebPage
+from urllib.parse import urlparse
 from typing import Optional, Callable
 import re
 import asyncio
@@ -18,63 +18,57 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 全局浏览器实例和信号量（限制并发数）
-_browser = None
-_semaphore = asyncio.Semaphore(10)  # 限制最多 10 个并发
+# 并发控制信号量
+_semaphore = asyncio.Semaphore(10)
 
 def validate_url(url: str) -> bool:
     """验证URL合法性（基础SSRF防护）"""
     parsed = urlparse(url)
     if not re.match(r"^https?://", url, re.IGNORECASE):
         return False
-    # 可在此处添加域名白名单过滤
     return True
 
-async def get_browser():
-    """获取全局浏览器实例"""
-    global _browser
-    if not _browser:
-        playwright = await async_playwright().start()  # 启动 Playwright
-        _browser = await playwright.chromium.launch(headless=True, timeout=30000)
-    return _browser
-
 async def take_screenshot_common(url: str, action: Optional[Callable] = None):
-    """公共截图函数，执行特定操作后截图"""
+    """公共截图处理函数"""
     try:
         if not validate_url(url):
             raise HTTPException(status_code=400, detail="Invalid URL format")
 
         async with _semaphore:
-            browser = await get_browser()
-            context = None
-            page = None
-            try:
-                context = await browser.new_context(viewport={"width": 1280, "height": 800})
-                page = await context.new_page()
-                await page.goto(url, wait_until="networkidle", timeout=15000)
-                
-                if action:
-                    await action(page)
-
-                screenshot = await page.screenshot(full_page=True, type="png")
-                return screenshot
-            finally:
-                if page:
-                    await page.close()
-                if context:
-                    await context.close()
+            loop = asyncio.get_event_loop()
+            screenshot = await loop.run_in_executor(
+                None, _sync_screenshot_handler, url, action
+            )
+            return screenshot
     except HTTPException as he:
         raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Screenshot failed: {str(e)}")
 
-def wrap_screenshot_in_html(screenshot: bytes, url: str) -> str:
-    """将截图嵌入到模仿Chrome浏览器标签页的HTML页面中"""
-    # 将图片转换为Base64
-    screenshot_base64 = base64.b64encode(screenshot).decode("utf-8")
+def _sync_screenshot_handler(url: str, action: Optional[Callable] = None) -> bytes:
+    """同步处理截图逻辑"""
+    page = WebPage()
+    try:
+        # 访问页面并设置超时
+        page.get(url, timeout=15000)
+        
+        # 执行自定义操作（如果有）
+        if action:
+            action(page)
+
+        # 获取全屏截图，并返回字节数据（移除了 save_path 参数）
+        return page.get_screenshot(full_page=True, as_bytes=True)
     
-    # 构建HTML页面
-    html_content = f"""
+    except Exception as e:
+        raise RuntimeError(str(e))
+    finally:
+        page.quit()
+
+def wrap_screenshot_in_html(screenshot: bytes, url: str) -> str:
+    """将截图嵌入HTML页面（与原代码保持一致）"""
+    screenshot_base64 = base64.b64encode(screenshot).decode("utf-8")
+    # 此处保持原有HTML模板不变
+    return f"""
     <!DOCTYPE html>
     <html lang="zh-CN">
     <head>
@@ -214,46 +208,40 @@ def wrap_screenshot_in_html(screenshot: bytes, url: str) -> str:
     </body>
     </html>
     """
-    return html_content
 
 @app.get("/screenshot")
 async def take_screenshot(url: str):
-    """基础截图API"""
+    """基础截图接口"""
     screenshot = await take_screenshot_common(url)
-    html_content = wrap_screenshot_in_html(screenshot, url)
-    return HTMLResponse(content=html_content)
+    return HTMLResponse(content=wrap_screenshot_in_html(screenshot, url))
 
 @app.get("/screenshot_after_click")
 async def take_screenshot_after_click(url: str, text: str):
-    """点击指定文本元素后截图"""
-    async def action(page):
-        element = page.get_by_text(text)
-        count = await element.count()
-        if count == 0:
-            raise HTTPException(status_code=404, detail="找不到包含指定文本的元素")
-        await element.click()
-        try:
-            await page.wait_for_load_state("networkidle", timeout=5000)
-        except Exception:
-            pass  # 超时后继续截图
-    screenshot = await take_screenshot_common(url, action)
-    html_content = wrap_screenshot_in_html(screenshot, url)
-    return HTMLResponse(content=html_content)
+    """点击文本后截图"""
+    def action(page: WebPage):
+        # 使用更可靠的文本定位方式
+        element = page.ele(f'text:{text}', timeout=5)
+        if not element:
+            raise ValueError("Element not found")
+        element.click()
+        page.wait(2)  # 等待可能的页面变化
+
+    try:
+        screenshot = await take_screenshot_common(url, action)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    
+    return HTMLResponse(content=wrap_screenshot_in_html(screenshot, url))
 
 @app.get("/screenshot_after_scroll")
 async def take_screenshot_after_scroll(url: str, delta_y: int):
     """滚动页面后截图"""
-    async def action(page):
-        await page.evaluate(f"window.scrollBy(0, {delta_y})")
-    screenshot = await take_screenshot_common(url, action)
-    html_content = wrap_screenshot_in_html(screenshot, url)
-    return HTMLResponse(content=html_content)
+    def action(page: WebPage):
+        page.run_js(f"window.scrollBy(0, {delta_y})")
+        page.wait(0.5)  # 等待滚动动画
 
-# 关闭浏览器实例
-@app.on_event("shutdown")
-async def shutdown_event():
-    if _browser:
-        await _browser.close()
+    screenshot = await take_screenshot_common(url, action)
+    return HTMLResponse(content=wrap_screenshot_in_html(screenshot, url))
 
 if __name__ == "__main__":
     import uvicorn
