@@ -1,6 +1,6 @@
 # 📸Pcap
 
-这是一个基于 FastAPI 和 Playwright 的网页截图 API，支持高并发访问并优化了性能。
+这是一个基于 FastAPI 和 DrissionPage 的网页截图 API，支持高并发访问并优化了性能。
 
 ---
 
