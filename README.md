@@ -23,7 +23,7 @@ python3 -m venv venv
 source venv/bin/activate
 
 # 安装依赖包
-pip install fastapi uvicorn playwright
+pip install fastapi uvicorn DrissionPage
 ```
 
 ### 2. 安装浏览器内核
