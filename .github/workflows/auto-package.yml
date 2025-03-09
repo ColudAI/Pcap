@@ -1,3 +1,11 @@
+name: Build Executable
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
 jobs:
   build:
     strategy:
@@ -34,7 +42,5 @@ jobs:
         with:
           name: ${{ runner.os }} Build
           path: |
-            build/*.exe
-            build/*.bin
-            build/*.app
+            build/
           include-hidden-files: true
