@@ -196,7 +196,7 @@ def wrap_screenshot_in_html(screenshot: bytes, url: str) -> str:
                 </div>
                 <!-- 标签页 -->
                 <div class="tabs">
-                    <div class="tab active">新标签页</div>
+                    <div class="tab active">{url}</div>
                 </div>
             </div>
 
