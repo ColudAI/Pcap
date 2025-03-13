@@ -1,6 +1,6 @@
 # 📸Pcap
 
-这是一个基于 FastAPI 和 DrissionPage 的网页截图 API，支持高并发访问并优化了性能。
+这是一个基于 FastAPI 实现的一个支持网页操作、截图、发送请求和附近美食和购物的API,他对大模型提供服务，优势显著！
 ![Pacp](https://github.com/user-attachments/assets/0404e841-7be7-4303-924c-95e9692e7074)
 
 
