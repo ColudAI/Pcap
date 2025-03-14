@@ -10,7 +10,98 @@ import base64
 
 app = FastAPI()
 
-# 允许跨域配置
+# 加载页面HTML模板
+LOADING_HTML = """
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pcap-让我思考与执行💡</title>
+  <link rel="icon" type="image/svg+xml" href="https://coludai.cn/data_img/Logo.png" />
+  <style>
+    /* 全局初始化 */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    /* 居中屏幕并设置背景为深空灰色 */
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-color: #1C1C1C;
+      position: relative;
+    }
+    /* API 开放平台按钮及其光泽效果，文本更浅灰 */
+    .api-btn {
+      position: relative;
+      display: inline-block;
+      overflow: hidden;
+      padding-bottom: 0.3rem;
+    }
+    .api-btn .btn-text {
+      display: inline-block;
+      background: linear-gradient(90deg, #888 40%, #aaa 50%, #888 60%);
+      background-size: 200%;
+      -webkit-background-clip: text;
+      color: transparent;
+      animation: shine 3s linear infinite;
+      font-size: 1.2rem;
+    }
+    @keyframes shine {
+      0% { background-position: -200%; }
+      100% { background-position: 200%; }
+    }
+    .api-btn:hover {
+      cursor: default;
+    }
+    /* 底部水印样式 */
+    .watermark {
+      position: fixed;
+      bottom: 10px;
+      width: 100%;
+      text-align: center;
+      color: #999;
+      font-size: 0.8rem;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="api-btn">
+    <span class="btn-text">让我思考与执行💡</span>
+  </div>
+  <div class="watermark">Pcap&SAI-Reasoner</div>
+  <script>
+    window.onload = function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const params = { ajax: 'true' };
+      
+      urlParams.forEach((value, key) => {
+        if (key !== 'ajax') params[key] = value;
+      });
+
+      fetch(`${window.location.pathname}?${new URLSearchParams(params)}`)
+        .then(response => {
+          if (!response.ok) return response.text().then(t => { throw t });
+          return response.text();
+        })
+        .then(html => {
+          document.documentElement.innerHTML = html;
+        })
+        .catch(error => {
+          document.body.innerHTML = `<div style="color:#ff5555;padding:20px">加载失败: ${error}</div>`;
+        });
+    };
+  </script>
+</body>
+</html>
+"""
+
+# CORS配置
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,56 +109,44 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 并发控制信号量
+# 并发控制
 _semaphore = asyncio.Semaphore(10)
 
 def validate_url(url: str) -> bool:
-    """验证URL合法性（基础SSRF防护）"""
+    """URL验证函数"""
     parsed = urlparse(url)
-    if not re.match(r"^https?://", url, re.IGNORECASE):
-        return False
-    return True
+    return re.match(r"^https?://", url, re.IGNORECASE) is not None
 
 async def take_screenshot_common(url: str, action: Optional[Callable] = None):
-    """公共截图处理函数"""
+    """核心截图处理函数"""
     try:
         if not validate_url(url):
-            raise HTTPException(status_code=400, detail="Invalid URL format")
+            raise HTTPException(status_code=400, detail="URL格式无效")
 
         async with _semaphore:
             loop = asyncio.get_event_loop()
-            screenshot = await loop.run_in_executor(
+            return await loop.run_in_executor(
                 None, _sync_screenshot_handler, url, action
             )
-            return screenshot
     except HTTPException as he:
         raise he
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Screenshot failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"截图失败: {str(e)}")
 
 def _sync_screenshot_handler(url: str, action: Optional[Callable] = None) -> bytes:
-    """同步处理截图逻辑"""
+    """同步处理逻辑"""
     page = WebPage()
     try:
-        # 访问页面并设置超时
         page.get(url, timeout=15000)
-        
-        # 执行自定义操作（如果有）
         if action:
             action(page)
-
-        # 获取全屏截图，并返回字节数据（移除了 save_path 参数）
         return page.get_screenshot(full_page=True, as_bytes=True)
-    
-    except Exception as e:
-        raise RuntimeError(str(e))
     finally:
         page.quit()
 
 def wrap_screenshot_in_html(screenshot: bytes, url: str) -> str:
-    """将截图嵌入HTML页面（与原代码保持一致）"""
+    """将截图嵌入HTML页面，支持深色和浅色模式"""
     screenshot_base64 = base64.b64encode(screenshot).decode("utf-8")
-    # 此处保持原有HTML模板不变
     return f"""
     <!DOCTYPE html>
     <html lang="zh-CN">
@@ -86,23 +165,65 @@ def wrap_screenshot_in_html(screenshot: bytes, url: str) -> str:
 
             body {{
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-                background-color: #f1f3f4;
                 height: 100vh;
                 display: flex;
                 justify-content: center;
                 align-items: center;
             }}
 
-            /* 浏览器窗口容器 */
+            /* 浅色模式 */
+            @media (prefers-color-scheme: light) {{
+                body {{
+                    background-color: #f1f3f4;
+                }}
+                .browser-window {{
+                    background-color: #fff;
+                }}
+                .toolbar {{
+                    background-color: #f8f9fa;
+                    border-bottom: 1px solid #e0e0e0;
+                }}
+                .tab {{
+                    background-color: #fff;
+                    border: 1px solid #e0e0e0;
+                    color: #202124;
+                }}
+                .tab.active {{
+                    background-color: #f8f9fa;
+                    border-bottom-color: transparent;
+                }}
+            }}
+
+            /* 深色模式 */
+            @media (prefers-color-scheme: dark) {{
+                body {{
+                    background-color: #1C1C1C;
+                }}
+                .browser-window {{
+                    background-color: #2d2d2d;
+                }}
+                .toolbar {{
+                    background-color: #333;
+                    border-bottom: 1px solid #444;
+                }}
+                .tab {{
+                    background-color: #2d2d2d;
+                    border: 1px solid #444;
+                    color: #e0e0e0;
+                }}
+                .tab.active {{
+                    background-color: #333;
+                    border-bottom-color: transparent;
+                }}
+            }}
+
+            /* 浏览器窗口容器 - 全屏显示 */
             .browser-window {{
-                width: 100%;
+                width: 100vw;
                 height: 100vh;
-                background-color: #fff;
-                border-radius: 12px;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-                overflow: hidden;
                 display: flex;
                 flex-direction: column;
+                overflow: hidden;
             }}
 
             /* 顶部工具栏 */
@@ -110,8 +231,7 @@ def wrap_screenshot_in_html(screenshot: bytes, url: str) -> str:
                 display: flex;
                 align-items: center;
                 padding: 12px;
-                background-color: #f8f9fa;
-                border-bottom: 1px solid #e0e0e0;
+                flex-shrink: 0; /* 防止工具栏被压缩 */
             }}
 
             /* Mac风格的控制按钮 */
@@ -153,35 +273,30 @@ def wrap_screenshot_in_html(screenshot: bytes, url: str) -> str:
                 flex: 1;
                 max-width: 200px;
                 height: 36px;
-                background-color: #fff;
-                border: 1px solid #e0e0e0;
                 border-radius: 8px 8px 0 0;
                 display: flex;
                 align-items: center;
                 padding: 0 12px;
                 font-size: 14px;
-                color: #202124;
             }}
 
             .tab.active {{
-                background-color: #f8f9fa;
                 border-bottom-color: transparent;
             }}
 
-            /* 内容区域 */
+            /* 内容区域 - 宽度适配，高度滚动 */
             .content {{
                 flex: 1;
-                background-color: #fff;
-                padding: 20px;
-                overflow: auto;
-                text-align: center;
+                overflow-x: hidden; /* 隐藏水平滚动条 */
+                overflow-y: auto; /* 允许垂直滚动 */
+                position: relative;
             }}
 
+            /* 图片样式 - 宽度适配，高度按比例 */
             .content img {{
-                max-width: 100%;
-                height: auto;
-                border-radius: 8px;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                width: 100%;
+                height: auto; /* 高度按比例缩放 */
+                display: block;
             }}
         </style>
     </head>
@@ -210,38 +325,45 @@ def wrap_screenshot_in_html(screenshot: bytes, url: str) -> str:
     """
 
 @app.get("/screenshot")
-async def take_screenshot(url: str):
+async def take_screenshot(url: str, ajax: bool = False):
     """基础截图接口"""
+    if not ajax:
+        return HTMLResponse(LOADING_HTML)
     screenshot = await take_screenshot_common(url)
-    return HTMLResponse(content=wrap_screenshot_in_html(screenshot, url))
+    return HTMLResponse(wrap_screenshot_in_html(screenshot, url))
 
 @app.get("/screenshot_after_click")
-async def take_screenshot_after_click(url: str, text: str):
-    """点击文本后截图"""
+async def take_screenshot_after_click(url: str, text: str, ajax: bool = False):
+    """点击后截图接口"""
+    if not ajax:
+        return HTMLResponse(LOADING_HTML)
+    
     def action(page: WebPage):
-        # 使用更可靠的文本定位方式
         element = page.ele(f'text:{text}', timeout=5)
         if not element:
-            raise ValueError("Element not found")
+            raise ValueError("找不到指定元素")
         element.click()
-        page.wait(2)  # 等待可能的页面变化
+        page.wait(2)
 
     try:
         screenshot = await take_screenshot_common(url, action)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     
-    return HTMLResponse(content=wrap_screenshot_in_html(screenshot, url))
+    return HTMLResponse(wrap_screenshot_in_html(screenshot, url))
 
 @app.get("/screenshot_after_scroll")
-async def take_screenshot_after_scroll(url: str, delta_y: int):
-    """滚动页面后截图"""
+async def take_screenshot_after_scroll(url: str, delta_y: int, ajax: bool = False):
+    """滚动后截图接口"""
+    if not ajax:
+        return HTMLResponse(LOADING_HTML)
+    
     def action(page: WebPage):
         page.run_js(f"window.scrollBy(0, {delta_y})")
-        page.wait(0.5)  # 等待滚动动画
+        page.wait(0.5)
 
     screenshot = await take_screenshot_common(url, action)
-    return HTMLResponse(content=wrap_screenshot_in_html(screenshot, url))
+    return HTMLResponse(wrap_screenshot_in_html(screenshot, url))
 
 if __name__ == "__main__":
     import uvicorn
