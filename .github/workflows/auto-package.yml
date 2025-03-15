@@ -53,7 +53,7 @@ jobs:
           script-name: main.py
           mode: app
           include-data-files: |
-            ./Functions/prompt.txt=Functions/prompt.txt
+            ./files/template/load.html=files/template/load.html
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
