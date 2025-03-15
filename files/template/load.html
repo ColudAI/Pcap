@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pcap-让我思考与执行💡</title>
+  <link rel="icon" type="image/svg+xml" href="https://coludai.cn/data_img/Logo.png" />
+  <style>
+    /* 全局初始化 */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    /* 居中屏幕并设置背景为深空灰色 */
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-color: #1C1C1C;
+      position: relative;
+    }
+    /* API 开放平台按钮及其光泽效果，文本更浅灰 */
+    .api-btn {
+      position: relative;
+      display: inline-block;
+      overflow: hidden;
+      padding-bottom: 0.3rem;
+    }
+    .api-btn .btn-text {
+      display: inline-block;
+      background: linear-gradient(90deg, #888 40%, #aaa 50%, #888 60%);
+      background-size: 200%;
+      -webkit-background-clip: text;
+      color: transparent;
+      animation: shine 3s linear infinite;
+      font-size: 1.2rem;
+    }
+    @keyframes shine {
+      0% { background-position: -200%; }
+      100% { background-position: 200%; }
+    }
+    .api-btn:hover {
+      cursor: default;
+    }
+    /* 底部水印样式 */
+    .watermark {
+      position: fixed;
+      bottom: 10px;
+      width: 100%;
+      text-align: center;
+      color: #999;
+      font-size: 0.8rem;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="api-btn">
+    <span class="btn-text">让我思考与执行💡</span>
+  </div>
+  <div class="watermark">Pcap&SAI-Reasoner</div>
+  <script>
+    window.onload = function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const params = { ajax: 'true' };
+      
+      urlParams.forEach((value, key) => {
+        if (key !== 'ajax') params[key] = value;
+      });
+
+      fetch(`${window.location.pathname}?${new URLSearchParams(params)}`)
+        .then(response => {
+          if (!response.ok) return response.text().then(t => { throw t });
+          return response.text();
+        })
+        .then(html => {
+          document.documentElement.innerHTML = html;
+        })
+        .catch(error => {
+          document.body.innerHTML = `<div style="color:#ff5555;padding:20px">加载失败: ${error}</div>`;
+        });
+    };
+  </script>
+</body>
+</html>
