@@ -18,18 +18,6 @@ jobs:
       - name: Check-out repository
         uses: actions/checkout@v4
 
-      - name: Check if main.py and prompt.txt exist
-        shell: bash
-        run: |
-          if [ ! -f "main.py" ]; then
-            echo "Error: main.py does not exist!"
-            exit 1
-          fi
-          if [ ! -f "Functions/prompt.txt" ]; then
-            echo "Error: Functions/prompt.txt does not exist!"
-            exit 1
-          fi
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
