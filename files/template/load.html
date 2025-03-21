@@ -6,27 +6,62 @@
   <title>Pcap-让我思考与执行💡</title>
   <link rel="icon" type="image/svg+xml" href="https://coludai.cn/data_img/Logo.png" />
   <style>
-    /* 全局初始化 */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    /* 居中屏幕并设置背景为深空灰色 */
     body {
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 100vh;
+      min-height: 100vh;
       background-color: #1C1C1C;
       position: relative;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 20px;
     }
-    /* API 开放平台按钮及其光泽效果，文本更浅灰 */
+    .browser-controls {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      gap: 8px;
+    }
+    .control-button {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .control-button:hover {
+      opacity: 0.8;
+    }
+    .close {
+      background: #ff5f56;
+    }
+    .minimize {
+      background: #ffbd2e;
+    }
+    .maximize {
+      background: #27c93f;
+    }
     .api-btn {
       position: relative;
       display: inline-block;
       overflow: hidden;
-      padding-bottom: 0.3rem;
+      padding: 1rem;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s;
+    }
+    .api-btn:hover {
+      transform: translateY(-2px);
+      cursor: default;
     }
     .api-btn .btn-text {
       display: inline-block;
@@ -35,28 +70,42 @@
       -webkit-background-clip: text;
       color: transparent;
       animation: shine 3s linear infinite;
-      font-size: 1.2rem;
+      font-size: clamp(1rem, 4vw, 1.5rem);
     }
     @keyframes shine {
       0% { background-position: -200%; }
       100% { background-position: 200%; }
     }
-    .api-btn:hover {
-      cursor: default;
-    }
-    /* 底部水印样式 */
     .watermark {
       position: fixed;
-      bottom: 10px;
+      bottom: 20px;
       width: 100%;
       text-align: center;
       color: #999;
-      font-size: 0.8rem;
+      font-size: clamp(0.7rem, 2vw, 0.9rem);
       pointer-events: none;
+    }
+    @media (max-width: 480px) {
+      .browser-controls {
+        top: 10px;
+        left: 10px;
+      }
+      .control-button {
+        width: 14px;
+        height: 14px;
+      }
+      body {
+        padding: 10px;
+      }
     }
   </style>
 </head>
 <body>
+  <div class="browser-controls">
+    <div class="control-button close" onclick="window.close()"></div>
+    <div class="control-button minimize"></div>
+    <div class="control-button maximize"></div>
+  </div>
   <div class="api-btn">
     <span class="btn-text">让我思考与执行💡</span>
   </div>
