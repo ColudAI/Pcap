@@ -18,18 +18,21 @@
 
 ## 安装部署
 
-### 1. 安装 Python 依赖
-```bash
-# 创建虚拟环境（推荐）
-python3 -m venv venv
-source venv/bin/activate
+### 环境要求
+- Python 3.9+
+- Python-Pip
+- Windows/Linux/MacOS
 
-# 安装依赖包
-pip install fastapi uvicorn DrissionPage
+### 安装依赖
+#### 自动安装
+```bash 
+python install.py #自动安装配置
 ```
-
-### 2. 安装浏览器内核
+#### 手动安装
 ```bash
+pip install -r requirements.txt
+
+playwright install
 playwright install chromium
 ```
 
