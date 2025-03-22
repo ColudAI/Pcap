@@ -116,19 +116,6 @@ HTML_TEMPLATE = """
             }}
         }}
     </style>
-    <script>
-        window.onload = function() {
-            const width = window.innerWidth;
-            const height = window.innerHeight;
-            fetch('/api/set-window-size', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ width, height })
-            });
-        }
-    </script>
 </head>
 <body>
     <div class="browser-window">
