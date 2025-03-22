@@ -125,7 +125,7 @@ HTML_TEMPLATE = """
                 <div class="control-button minimize"></div>
                 <div class="control-button maximize"></div>
             </div>
-            <div class="address-bar">{url}</div>
+            <input class="address-bar" type="text" value="{url}" onkeydown="if(event.key === 'Enter') {{ window.location.href = '/screenshot?url=' + encodeURIComponent(this.value); }}">
         </div>
         <div class="browser-content">
             <img class="screenshot" src="data:image/png;base64,{img_b64}" alt="Screenshot">
