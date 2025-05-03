@@ -13,6 +13,9 @@ jobs:
         os: [macos-latest, ubuntu-latest, windows-latest]
     
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+      packages: write
 
     steps:
       - name: Check-out repository
@@ -85,12 +88,34 @@ jobs:
           disable-console: true
           macos-app-name: Pcap
 
+      - name: Check build output
+        shell: bash
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            if [ ! -f "dist/main.exe" ]; then
+              echo "Build failed: main.exe not found"
+              exit 1
+            fi
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            if [ ! -d "dist/Pcap.app" ]; then
+              echo "Build failed: Pcap.app not found"
+              exit 1
+            fi
+          else
+            if [ ! -f "dist/main.bin" ]; then
+              echo "Build failed: main.bin not found"
+              exit 1
+            fi
+          fi
+
       - name: Create Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            dist/*
+            dist/main.exe
+            dist/main.bin
+            dist/Pcap.app
           tag_name: ${{ steps.get_version.outputs.version }}
           name: Release ${{ steps.get_version.outputs.version }}
           body: |
