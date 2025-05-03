@@ -60,17 +60,12 @@ jobs:
           include-package: |
             Functions
             config
-          enable-plugin: |
-            multiprocessing
-            tk-inter
+          enable-plugins: multiprocessing,tk-inter
           output-dir: dist
-          remove-output: true
-          windows-disable-console: true
+          disable-console: true
           windows-icon-from-ico: files/icon.ico
-          macos-create-app-bundle: true
           macos-app-icon: files/icon.icns
           macos-app-name: Pcap
-          macos-signed-app: false
 
       - name: Test the executable
         run: |
