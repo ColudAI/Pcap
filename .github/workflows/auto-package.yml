@@ -41,15 +41,28 @@ jobs:
 
       - name: Create necessary directories
         run: |
-          mkdir -p cache logs
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            mkdir cache
+            mkdir logs
+          else
+            mkdir -p cache logs
+          fi
 
       - name: Clean build directory
         run: |
-          rm -rf build/
-          rm -rf *.exe
-          rm -rf *.app
-          rm -rf *.so
-          rm -rf *.dylib
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            if exist build rmdir /s /q build
+            if exist *.exe del /f /q *.exe
+            if exist *.app rmdir /s /q *.app
+            if exist *.so del /f /q *.so
+            if exist *.dylib del /f /q *.dylib
+          else
+            rm -rf build/
+            rm -rf *.exe
+            rm -rf *.app
+            rm -rf *.so
+            rm -rf *.dylib
+          fi
 
       - name: Build Executable with Nuitka
         uses: Nuitka/Nuitka-Action@main
@@ -73,7 +86,7 @@ jobs:
       - name: Test the executable
         run: |
           if [ "${{ runner.os }}" = "Windows" ]; then
-            ./dist/main.exe --version
+            .\dist\main.exe --version
           elif [ "${{ runner.os }}" = "macOS" ]; then
             ./dist/Pcap.app/Contents/MacOS/main --version
           else

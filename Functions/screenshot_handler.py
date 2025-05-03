@@ -10,7 +10,6 @@ import re
 from Functions.logger import logger
 import os
 import tempfile
-import time
 
 # 并发控制
 _semaphore = asyncio.Semaphore(10)
@@ -19,28 +18,19 @@ async def take_screenshot_common(
     url: str,
     action: Optional[Callable] = None,
     timeout: Optional[int] = None,
-    quality: Optional[int] = None,
-    max_retries: int = 3
+    quality: Optional[int] = None
 ):
-    """核心截图处理函数，带有重试机制"""
-    last_error = None
-    for attempt in range(max_retries):
-        try:
-            async with _semaphore:
-                loop = asyncio.get_event_loop()
-                return await loop.run_in_executor(
-                    None, _sync_screenshot_handler, url, action, timeout, quality
-                )
-        except HTTPException as he:
-            raise he
-        except Exception as e:
-            last_error = e
-            logger.warning(f"截图尝试 {attempt + 1}/{max_retries} 失败: {str(e)}")
-            if attempt < max_retries - 1:
-                await asyncio.sleep(1)  # 等待1秒后重试
-            continue
-    
-    raise HTTPException(status_code=500, detail=f"截图失败，已重试{max_retries}次: {str(last_error)}")
+    """核心截图处理函数"""
+    try:
+        async with _semaphore:
+            loop = asyncio.get_event_loop()
+            return await loop.run_in_executor(
+                None, _sync_screenshot_handler, url, action, timeout, quality
+            )
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"截图失败: {str(e)}")
 
 def _clean_base64(base64_str: str) -> str:
     """清理base64字符串，只保留有效的base64字符"""
@@ -75,10 +65,7 @@ def _sync_screenshot_handler(
             script=timeout or APP_CONFIG["TIMEOUT"] * 1000
         )
         page.set.window.size(1366, 768)
-        
-        # 确保页面完全加载
         page.get(url)
-        time.sleep(2)  # 等待页面完全渲染
 
         # 2. 页面加载后
         logger.info("页面加载完成，准备截图")
@@ -125,10 +112,7 @@ def _sync_screenshot_handler(
                 return screenshot_bytes
         return screenshot_bytes
     finally:
-        try:
-            page.quit()
-        except Exception as e:
-            logger.error(f"关闭浏览器页面失败: {str(e)}")
+        page.quit()
 
 def click_element(page: ChromiumPage, text: str):
     """点击元素动作"""
@@ -136,9 +120,9 @@ def click_element(page: ChromiumPage, text: str):
     if not element:
         raise ValueError("找不到指定元素")
     element.click()
-    time.sleep(1)  # 等待点击后的页面变化
+    page.wait.load_complete()
 
 def scroll_page(page: ChromiumPage, delta_y: int):
     """页面滚动动作"""
     page.scroll.to_location(0, delta_y)
-    time.sleep(1)  # 等待滚动后的页面变化
+    page.wait.load_complete()
