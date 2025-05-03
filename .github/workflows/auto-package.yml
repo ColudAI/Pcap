@@ -189,9 +189,9 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/windows/dist/main.exe
-            artifacts/ubuntu/dist/main.bin
-            artifacts/macos/dist/Pcap.app
+            artifacts/windows/main.exe
+            artifacts/ubuntu/main.bin
+            artifacts/macos/Pcap.app
           tag_name: ${{ steps.get_version.outputs.version }}
           name: Release ${{ steps.get_version.outputs.version }}
           body: |
