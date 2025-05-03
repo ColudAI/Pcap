@@ -164,6 +164,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+          pattern: '*Build/dist/*'
+
+      - name: List downloaded artifacts
+        shell: bash
+        run: |
+          echo "Downloaded artifacts:"
+          ls -R artifacts/
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
