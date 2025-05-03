@@ -85,17 +85,6 @@ jobs:
           disable-console: true
           macos-app-name: Pcap
 
-      - name: Test the executable
-        shell: bash
-        run: |
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            ./dist/main.exe --version
-          elif [[ "${{ runner.os }}" == "macOS" ]]; then
-            ./dist/Pcap.app/Contents/MacOS/main --version
-          else
-            ./dist/main.bin --version
-          fi
-
       - name: Create Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v1

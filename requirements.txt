@@ -4,3 +4,4 @@ DrissionPage
 playwright
 rich
 Pillow>=11.2.1
+ordered-set
