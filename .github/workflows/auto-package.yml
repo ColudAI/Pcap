@@ -91,6 +91,14 @@ jobs:
           macos-app-icon: none
           macos-app-version: 1.0.0
 
+      - name: Rename macOS app
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          if [ -d "dist/main.app" ]; then
+            mv dist/main.app dist/Pcap.app
+          fi
+
       - name: List build directory
         shell: bash
         run: |
