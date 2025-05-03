@@ -137,7 +137,8 @@ jobs:
           name: ${{ runner.os }} Build
           path: |
             dist/
-          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
 
   release:
     needs: build
@@ -160,11 +161,23 @@ jobs:
           VERSION=$(git describe --tags --always)
           echo "version=v${VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Download all artifacts
+      - name: Download Windows artifact
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
-          pattern: '*Build/dist/*'
+          name: windows-latest Build
+          path: artifacts/windows
+
+      - name: Download Ubuntu artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ubuntu-latest Build
+          path: artifacts/ubuntu
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-latest Build
+          path: artifacts/macos
 
       - name: List downloaded artifacts
         shell: bash
@@ -176,9 +189,9 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/windows-latest Build/dist/main.exe
-            artifacts/ubuntu-latest Build/dist/main.bin
-            artifacts/macos-latest Build/dist/Pcap.app
+            artifacts/windows/dist/main.exe
+            artifacts/ubuntu/dist/main.bin
+            artifacts/macos/dist/Pcap.app
           tag_name: ${{ steps.get_version.outputs.version }}
           name: Release ${{ steps.get_version.outputs.version }}
           body: |
