@@ -176,3 +176,8 @@ cython_debug/
 
 # project cache
 screenshot_cache.json
+
+# application logs
+logs/
+*.log
+*.log.*
