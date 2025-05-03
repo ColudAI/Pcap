@@ -3,3 +3,4 @@ uvicorn
 DrissionPage
 playwright
 rich
+Pillow>=11.2.1
