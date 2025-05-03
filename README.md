@@ -1,167 +1,112 @@
-# 📸Pcap
+# 📸 Pcap
 
-这是一个基于 FastAPI 实现的一个支持网页操作、截图、发送请求和附近美食和购物的API,他对大模型提供服务，优势显著！
-![Pacp](https://github.com/user-attachments/assets/0404e841-7be7-4303-924c-95e9692e7074)
+<p align="center">
+  <a href="https://raw.githubusercontent.com/ColudAI/Pcap/LICENSE">
+    <img src="https://img.shields.io/github/license/ColudAI/Pcap" alt="license">
+  </a>
+  <img src="https://img.shields.io/badge/python-3.10+-blue?logo=python&logoColor=edb641" alt="python">
+    <a href="https://github.com/ColudAI/Pcap/actions/workflows/auto-package.yml">
+  </a>
+</p>
 
+一个基于 FastAPI 的智能网页操作和截图服务，为大语言模型提供强大的网页交互和数据采集能力。
 
----
+![Pcap](https://github.com/user-attachments/assets/0404e841-7be7-4303-924c-95e9692e7074)
 
-## 功能特性
-- ✅ 支持跨域访问
-- ⚡️ 高性能，支持高并发
-- 🔒 自动验证 URL 合法性
-- 📸 返回 PNG 格式的截图
-- 🖱️ 支持元素点击后截图
-- 🖼️ 支持页面滚动后截图
+## ✨ 主要特性
 
----
+- 🌐 支持跨域访问和高并发处理
+- 🔍 智能网页操作和元素定位
+- 📸 高质量页面截图功能
+  - 支持完整页面截图
+  - 支持元素点击后截图
+  - 支持页面滚动后截图
+- 🛡️ 内置 URL 安全性验证
+- 🖼️ 优化的图片处理
+  - 自动输出 PNG 格式
+  - 智能图片压缩
+- 🚀 高性能设计
+  - 异步处理机制
+  - 内存优化管理
 
-## 安装部署
+## 🛠️ 技术栈
+
+- FastAPI
+- Python 3.10+
+- Nuitka（用于打包）
+- GitHub Actions（CI/CD）
+
+## 📦 安装说明
 
 ### 环境要求
-- Python 3.9+
-- Python-Pip
-- Windows/Linux/MacOS
 
-### 安装依赖
-#### 自动安装
-> 正在维护中...请勿使用
+- Python 3.10 或更高版本
+- pip 包管理器
+- 支持 Windows/Linux/macOS 系统
 
-```bash 
-python install.py #自动安装配置
+### 方式一：直接下载发行版
+
+访问 [Releases](https://github.com/ColudAI/Pcap/releases) 页面，下载对应平台的可执行文件：
+
+- Windows: `main.exe`
+- Linux: `main.bin`
+- macOS: `Pcap.app.zip`
+
+### 方式二：从源码安装
+
+1. 克隆仓库
+```bash
+git clone https://github.com/ColudAI/Pcap.git
+cd Pcap
 ```
-#### 手动安装
+
+2. 安装依赖
 ```bash
 pip install -r requirements.txt
-
-playwright install
-playwright install chromium
 ```
 
----
-
-## API 接口文档
-
-### 基础截图接口
-```http
-GET /screenshot?url={encoded_url}
-```
-**参数说明**
-| 参数 | 类型   | 必需 | 说明                   |
-|------|--------|------|------------------------|
-| url  | string | 是   | 需要截图的网页完整URL  |
-
-**示例**
+3. 运行程序
 ```bash
-curl "http://localhost:8000/screenshot?url=https%3A%2F%2Fexample.com" -o output.png
+python main.py
 ```
+
+## 🚀 使用方法
+
+1. 启动服务后，访问 `http://localhost:8000/docs` 查看 API 文档
+2. API 端点说明：
+   - `/screenshot`: 获取网页截图
+   - `/click`: 点击元素后截图
+   - `/scroll`: 滚动页面后截图
+
+## 🔧 配置说明
+
+主要配置项在 `config` 目录下(由于打包问题所以不会提供配置文件，有需求请自行下载)：
+
+- 服务器配置
+- 截图参数设置
+- 缓存策略
+- 日志级别
+
+## 📝 开发说明
+
+本项目使用 GitHub Actions 进行自动化构建和发布：
+
+- 自动版本管理
+- 多平台构建支持
+- 自动发布流程
+
+## 🤝 贡献指南
+
+欢迎提交 Issue 和 Pull Request！
+
+## 📄 许可证
+
+[许可证类型]
 
 ---
 
-### 点击元素后截图
-```http
-GET /screenshot_after_click?url={encoded_url}&text={element_text}
-```
-**参数说明**
-| 参数 | 类型   | 必需 | 说明                       |
-|------|--------|------|----------------------------|
-| url  | string | 是   | 目标网页URL                |
-| text | string | 是   | 需要点击的页面元素文本内容 |
+## 🔗 相关链接
 
-**示例**
-```bash
-curl "http://localhost:8000/screenshot_after_click?url=https%3A%2F%2Fexample.com&text=Sign%20In" -o clicked.png
-```
-
----
-
-### 滚动页面后截图
-```http
-GET /screenshot_after_scroll?url={encoded_url}&delta_y={pixels}
-```
-**参数说明**
-| 参数    | 类型 | 必需 | 说明                       |
-|---------|------|------|----------------------------|
-| url     | string | 是 | 目标网页URL                |
-| delta_y | int    | 是 | 垂直滚动像素值（正=向下）  |
-
-**示例**
-```bash
-curl "http://localhost:8000/screenshot_after_scroll?url=https%3A%2F%2Fexample.com&delta_y=800" -o scrolled.png
-```
-
----
-
-## 技术细节
-
-### 请求流程
-```mermaid
-graph TD
-    A[客户端请求] --> B{参数验证}
-    B -->|失败| C[返回4xx错误]
-    B -->|成功| D[创建浏览器实例]
-    D --> E[执行操作：<br>1. 加载页面<br>2. 点击/滚动<br>3. 截图]
-    E --> F[返回PNG图片]
-    F --> G[浏览器UI]
-```
-
-### 错误代码表
-| 状态码 | 说明                        |
-|--------|-----------------------------|
-| 400    | 无效的URL格式               |
-| 404    | 未找到指定文本元素          |
-| 408    | 页面加载超时                |
-| 500    | 服务器内部错误              |
-
----
-
-## 高级配置
-
-### 性能调优参数
-```python
-# main.py 中的关键配置
-_semaphore = asyncio.Semaphore(10)  # 并发控制
-VIEWPORT = {"width": 1280, "height": 800}  # 视口尺寸
-TIMEOUT = 15000  # 页面加载超时（毫秒）
-```
-
-### 生产环境部署
-```bash
-# 使用4个worker进程 + gzip压缩
-uvicorn main:app --workers 4 \
-    --proxy-headers \
-    --host 0.0.0.0 \
-    --port 8000 \
-    --timeout-keep-alive 30
-```
-
----
-
-## 最佳实践
-
-### 安全建议
-1. 在 `validate_url` 函数中添加域名白名单：
-```python
-ALLOWED_DOMAINS = {"example.com", "trusted-site.org"}
-
-def validate_url(url: str) -> bool:
-    parsed = urlparse(url)
-    return parsed.netloc in ALLOWED_DOMAINS
-```
-
-### 性能优化
-- 多次滚动截取长页面：
-```bash
-# 分段截取长页面
-for y in 0 1000 2000 3000; do
-  curl "http://localhost:8000/screenshot_after_scroll?url=...&delta_y=$y" -o "part_$y.png"
-done
-```
-
----
-> 📌 注意：所有URL参数需要经过URL编码处理，建议使用`urllib.parse.quote`进行编码
-
-## 未来工作
-### 这是我们的开源周的第一个产品，支持网页操作！
-*   实现发送请求的API
-*   实现个别城市附近美食数据收集以及前后端联动
+- [项目文档](#)
+- [问题反馈](https://github.com/ColudAI/Pcap/issues)
+- [更新日志](https://github.com/ColudAI/Pcap/commits)

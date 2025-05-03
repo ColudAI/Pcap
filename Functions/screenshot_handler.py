@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from DrissionPage import ChromiumPage
+from DrissionPage import ChromiumPage, ChromiumOptions
 from typing import Optional, Callable
 import asyncio
 from config import APP_CONFIG
@@ -55,8 +55,10 @@ def _sync_screenshot_handler(
     quality: Optional[int] = None
 ) -> bytes:
     """同步处理逻辑"""
-    # 创建页面对象，使用默认窗口大小
-    page = ChromiumPage()
+    # 创建浏览器配置
+    co = ChromiumOptions().headless()
+    # 创建页面对象，使用无头模式配置
+    page = ChromiumPage(addr_or_opts=co)
     try:
         # 1. 访问页面前
         logger.info(f"开始访问页面: {url}")
