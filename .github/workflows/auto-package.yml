@@ -17,6 +17,13 @@ jobs:
     steps:
       - name: Check-out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from commit
+        id: get_version
+        run: |
+          echo "version=$(git describe --tags --always)" >> $GITHUB_OUTPUT
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -26,19 +33,19 @@ jobs:
           cache-dependency-path: |
             **/requirements*.txt
 
-      - name: Install your Dependencies
+      - name: Install Dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install nuitka
 
-      - name: Verify Installed Dependencies
+      - name: Clean build directory
         run: |
-          pip list
-
-      - name: Debug Working Directory
-        run: pwd
-
-      - name: List Repository Contents
-        run: ls -R
+          rm -rf build/
+          rm -rf *.exe
+          rm -rf *.app
+          rm -rf *.so
+          rm -rf *.dylib
 
       - name: Build Executable with Nuitka
         uses: Nuitka/Nuitka-Action@main
@@ -48,14 +55,56 @@ jobs:
           mode: app
           include-data-files: |
             ./files/template/load.html=files/template/load.html
+            ./cache=cache
+            ./logs=logs
+          include-package: |
+            Functions
+            config
+          enable-plugin: |
+            multiprocessing
+            tk-inter
+          output-dir: dist
+          remove-output: true
+          windows-disable-console: true
+          windows-icon-from-ico: files/icon.ico
+          macos-create-app-bundle: true
+          macos-app-icon: files/icon.icns
+          macos-app-name: Pcap
+          macos-signed-app: false
 
-      - name: List Build Directory Contents
-        run: ls -R build
+      - name: Test the executable
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            ./dist/main.exe --version
+          elif [ "${{ runner.os }}" = "macOS" ]; then
+            ./dist/Pcap.app/Contents/MacOS/main --version
+          else
+            ./dist/main.bin --version
+          fi
+
+      - name: Create Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/*
+          tag_name: ${{ steps.get_version.outputs.version }}
+          name: Release ${{ steps.get_version.outputs.version }}
+          body: |
+            Automated release for ${{ steps.get_version.outputs.version }}
+            
+            Changes:
+            - Built for ${{ matrix.os }}
+            - Optimized with Nuitka
+            - Includes all necessary dependencies
+          draft: false
+          prerelease: false
+          generate_release_notes: true
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ runner.os }} Build
           path: |
-            build/
+            dist/
           include-hidden-files: true
