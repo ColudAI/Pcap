@@ -40,8 +40,9 @@ jobs:
           pip install nuitka
 
       - name: Create necessary directories
+        shell: bash
         run: |
-          if [ "${{ runner.os }}" = "Windows" ]; then
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
             mkdir cache
             mkdir logs
           else
@@ -49,13 +50,14 @@ jobs:
           fi
 
       - name: Clean build directory
+        shell: bash
         run: |
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            if exist build rmdir /s /q build
-            if exist *.exe del /f /q *.exe
-            if exist *.app rmdir /s /q *.app
-            if exist *.so del /f /q *.so
-            if exist *.dylib del /f /q *.dylib
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            if [ -d "build" ]; then rm -rf build; fi
+            if [ -f "*.exe" ]; then rm -f *.exe; fi
+            if [ -d "*.app" ]; then rm -rf *.app; fi
+            if [ -f "*.so" ]; then rm -f *.so; fi
+            if [ -f "*.dylib" ]; then rm -f *.dylib; fi
           else
             rm -rf build/
             rm -rf *.exe
@@ -84,10 +86,11 @@ jobs:
           macos-app-name: Pcap
 
       - name: Test the executable
+        shell: bash
         run: |
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            .\dist\main.exe --version
-          elif [ "${{ runner.os }}" = "macOS" ]; then
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            ./dist/main.exe --version
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
             ./dist/Pcap.app/Contents/MacOS/main --version
           else
             ./dist/main.bin --version
