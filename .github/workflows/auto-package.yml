@@ -68,8 +68,6 @@ jobs:
           enable-plugins: multiprocessing,tk-inter
           output-dir: dist
           disable-console: true
-          windows-icon-from-ico: files/icon.ico
-          macos-app-icon: files/icon.icns
           macos-app-name: Pcap
 
       - name: Test the executable
