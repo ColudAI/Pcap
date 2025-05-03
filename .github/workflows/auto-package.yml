@@ -129,27 +129,6 @@ jobs:
             fi
           fi
 
-      - name: Create Release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            dist/main.exe
-            dist/main.bin
-            dist/Pcap.app
-          tag_name: ${{ steps.get_version.outputs.version }}
-          name: Release ${{ steps.get_version.outputs.version }}
-          body: |
-            Automated release for ${{ steps.get_version.outputs.version }}
-            
-            Changes:
-            - Built for ${{ matrix.os }}
-            - Optimized with Nuitka
-            - Includes all necessary dependencies
-          draft: false
-          prerelease: false
-          generate_release_notes: true
-
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -157,3 +136,37 @@ jobs:
           path: |
             dist/
           include-hidden-files: true
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/windows-latest Build/dist/main.exe
+            artifacts/ubuntu-latest Build/dist/main.bin
+            artifacts/macos-latest Build/dist/Pcap.app
+          tag_name: ${{ needs.build.outputs.version }}
+          name: Release ${{ needs.build.outputs.version }}
+          body: |
+            Automated release for ${{ needs.build.outputs.version }}
+            
+            Changes:
+            - Built for all platforms
+            - Optimized with Nuitka
+            - Includes all necessary dependencies
+          draft: false
+          prerelease: false
+          generate_release_notes: true
