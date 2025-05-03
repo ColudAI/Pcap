@@ -6,10 +6,17 @@ from Functions.logger import logger
 from config import APP_CONFIG
 from contextlib import asynccontextmanager
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("应用启动")
+    yield
+    logger.info("应用关闭")
+
 app = FastAPI(
     title="网页截图服务",
     description="提供网页截图、点击后截图和滚动后截图功能",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # 获取IP地址
@@ -28,15 +35,15 @@ app.add_middleware(
 # 注册路由
 app.include_router(router)
 
-@app.on_event("startup")
+
+# 取消不受到支持的启动和关闭事件
+"""@app.on_event("startup")
 async def startup_event():
-    """应用启动时的初始化操作"""
     logger.info("应用启动")
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    """应用关闭时的清理操作"""
-    logger.info("应用关闭")
+    logger.info("应用关闭")"""
 
 if __name__ == "__main__":
     import uvicorn
