@@ -26,7 +26,9 @@ jobs:
       - name: Get version from commit
         id: get_version
         run: |
-          echo "version=$(git describe --tags --always)" >> $GITHUB_OUTPUT
+          VERSION=$(git describe --tags --always)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -146,6 +148,10 @@ jobs:
       packages: write
 
     steps:
+      - name: Get version
+        run: |
+          echo "VERSION=$(git describe --tags --always)" >> $GITHUB_ENV
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -158,10 +164,10 @@ jobs:
             artifacts/windows-latest Build/dist/main.exe
             artifacts/ubuntu-latest Build/dist/main.bin
             artifacts/macos-latest Build/dist/Pcap.app
-          tag_name: ${{ needs.build.outputs.version }}
-          name: Release ${{ needs.build.outputs.version }}
+          tag_name: ${{ env.VERSION }}
+          name: Release ${{ env.VERSION }}
           body: |
-            Automated release for ${{ needs.build.outputs.version }}
+            Automated release for ${{ env.VERSION }}
             
             Changes:
             - Built for all platforms
