@@ -8,12 +8,30 @@ from Functions.cache import screenshot_cache
 from config import APP_CONFIG
 import asyncio
 from typing import Optional
+import os
+import sys
 
 router = APIRouter()
 
+def get_resource_path(relative_path):
+    """获取资源文件的绝对路径"""
+    if getattr(sys, 'frozen', False):
+        # 如果是打包后的可执行文件
+        base_path = sys._MEIPASS
+    else:
+        # 如果是开发环境
+        base_path = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+    
+    return os.path.join(base_path, relative_path)
+
 # 加载页面HTML模板
-with open('files/template/load.html', 'r', encoding='utf-8') as f:
-    LOADING_HTML = f.read()
+template_path = get_resource_path('files/template/load.html')
+try:
+    with open(template_path, 'r', encoding='utf-8') as f:
+        LOADING_HTML = f.read()
+except FileNotFoundError:
+    logger.error(f"找不到模板文件: {template_path}")
+    LOADING_HTML = "<html><body><h1>Loading...</h1></body></html>"
 
 # 并发请求限制
 request_semaphore = asyncio.Semaphore(APP_CONFIG["MAX_CONCURRENT_REQUESTS"])

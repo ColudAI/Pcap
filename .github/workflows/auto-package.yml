@@ -77,12 +77,10 @@ jobs:
           nuitka-version: main
           script-name: main.py
           mode: app
-          include-data-files: |
-            ./files/template/load.html=./files/template/load.html
           include-data-dir: |
             ./cache=./cache
             ./logs=./logs
-            ./files=./files
+            ./files=files
           include-package: |
             Functions
             config
@@ -161,6 +159,19 @@ jobs:
           VERSION=$(git describe --tags --always)
           echo "version=v${VERSION}" >> $GITHUB_OUTPUT
 
+      - name: Get commit info
+        id: commit_info
+        shell: bash
+        run: |
+          AUTHOR=$(git log -1 --pretty=format:'%an')
+          EMAIL=$(git log -1 --pretty=format:'%ae')
+          MESSAGE=$(git log -1 --pretty=format:'%B')
+          echo "author=${AUTHOR}" >> $GITHUB_OUTPUT
+          echo "email=${EMAIL}" >> $GITHUB_OUTPUT
+          echo "message<<EOF" >> $GITHUB_OUTPUT
+          echo "${MESSAGE}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Download Windows artifact
         uses: actions/download-artifact@v4
         with:
@@ -203,10 +214,22 @@ jobs:
           body: |
             Automated release for ${{ steps.get_version.outputs.version }}
             
-            Changes:
+            ## 提交信息
+            **作者:** ${{ steps.commit_info.outputs.author }} (${{ steps.commit_info.outputs.email }})
+            **提交消息:**
+            ```
+            ${{ steps.commit_info.outputs.message }}
+            ```
+            
+            ## 更新内容
             - Built for all platforms
             - Optimized with Nuitka
             - Includes all necessary dependencies
+            
+            ## 下载说明
+            - Windows: 下载 main.exe
+            - Linux: 下载 main.bin
+            - macOS: 下载 Pcap.app.zip，解压后得到应用程序
           draft: false
           prerelease: false
           generate_release_notes: true
