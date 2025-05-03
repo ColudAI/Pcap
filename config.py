@@ -20,6 +20,13 @@ LOG_CONFIG: Dict[str, Any] = {
     "LOG_FILE": "app.log" # 日志文件
 }
 
+# LOGO
+ART_LOGO = """
+Pcap
+ColudAI
+"""
+
+
 # 创建必要的目录
 os.makedirs("logs", exist_ok=True) # 创建日志目录
 os.makedirs("cache", exist_ok=True) # 创建缓存目录

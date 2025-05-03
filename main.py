@@ -1,10 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from Functions import ipManage
+from Functions import ipManage, logo
 from Functions.routes import router
 from Functions.logger import logger
 from config import APP_CONFIG
 from contextlib import asynccontextmanager
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
