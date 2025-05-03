@@ -78,10 +78,11 @@ jobs:
           script-name: main.py
           mode: app
           include-data-files: |
-            ./files/template/load.html=files/template/load.html
+            ./files/template/load.html=./files/template/load.html
           include-data-dir: |
-            ./cache=cache
-            ./logs=logs
+            ./cache=./cache
+            ./logs=./logs
+            ./files=./files
           include-package: |
             Functions
             config
