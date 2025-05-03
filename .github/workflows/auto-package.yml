@@ -39,6 +39,10 @@ jobs:
           pip install -r requirements.txt
           pip install nuitka
 
+      - name: Create necessary directories
+        run: |
+          mkdir -p cache logs
+
       - name: Clean build directory
         run: |
           rm -rf build/
@@ -55,6 +59,7 @@ jobs:
           mode: app
           include-data-files: |
             ./files/template/load.html=files/template/load.html
+          include-data-dir: |
             ./cache=cache
             ./logs=logs
           include-package: |
