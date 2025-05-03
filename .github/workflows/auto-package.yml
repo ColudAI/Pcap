@@ -87,6 +87,39 @@ jobs:
           output-dir: dist
           disable-console: true
           macos-app-name: Pcap
+          macos-app-mode: standalone
+          macos-app-icon: none
+          macos-app-version: 1.0.0
+          macos-app-bundle-id: com.pcap.app
+          macos-app-signature: none
+          macos-app-protected-resources: none
+          macos-app-allow-background: true
+          macos-app-allow-jit: true
+          macos-app-allow-unsigned: true
+          macos-app-allow-unsigned-executable: true
+          macos-app-allow-unsigned-memory: true
+          macos-app-allow-unsigned-stack: true
+          macos-app-allow-unsigned-heap: true
+          macos-app-allow-unsigned-code: true
+          macos-app-allow-unsigned-data: true
+          macos-app-allow-unsigned-bss: true
+          macos-app-allow-unsigned-const: true
+          macos-app-allow-unsigned-init: true
+          macos-app-allow-unsigned-fini: true
+          macos-app-allow-unsigned-ctors: true
+          macos-app-allow-unsigned-dtors: true
+          macos-app-allow-unsigned-got: true
+          macos-app-allow-unsigned-plt: true
+          macos-app-allow-unsigned-reloc: true
+          macos-app-allow-unsigned-symbols: true
+          macos-app-allow-unsigned-strings: true
+          macos-app-allow-unsigned-rodata: true
+
+      - name: List build directory
+        shell: bash
+        run: |
+          echo "Build directory contents:"
+          ls -la dist/
 
       - name: Check build output
         shell: bash
@@ -99,6 +132,10 @@ jobs:
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
             if [ ! -d "dist/Pcap.app" ]; then
               echo "Build failed: Pcap.app not found"
+              echo "Current directory contents:"
+              ls -la
+              echo "dist directory contents:"
+              ls -la dist/
               exit 1
             fi
           else
